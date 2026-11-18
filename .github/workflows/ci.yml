@@ -1,0 +1,51 @@
+name: Payment Service CI
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  # Giai đoạn 1: Chạy Unit Test
+  test_job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Run Unit Tests
+        run: |
+          chmod +x ./gradlew
+          ./gradlew test
+
+  # Giai đoạn 2: Chỉ chạy khi test_job thành công rực rỡ nhờ từ khóa needs
+  build_job:
+    needs: test_job
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code (Vì Job Isolation nên Job 2 phải checkout lại từ đầu)
+        uses: actions/checkout@v4
+
+      - name: Setup Java JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Build Jar
+        run: |
+          chmod +x ./gradlew
+          ./gradlew bootJar
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: payment-service-artifact
+          path: build/libs/*.jar
+          retention-days: 3
